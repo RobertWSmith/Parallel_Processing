@@ -1,0 +1,88 @@
+```{r include=FALSE}
+library(ggplot2)
+library(scales)
+library(sqldf)
+library(xtable)
+
+data <- read.csv("~/NetBeansProjects/Project_2/Program2/P2_output_lg.csv", header = FALSE)
+colnames(data) <- c("Block_Size", "Elapsed_Time")
+
+output <- sqldf("select Block_Size, min(Elapsed_Time) as Elapsed_Time from data group by Block_Size")
+
+output <- cbind(output, exp = 1:5)
+
+op.data <- data.frame(
+  Block_Size = as.integer(2**(7:11)),
+  Run_1 = data$Elapsed_Time[1:5],
+  Run_2 = data$Elapsed_Time[6:10],
+  Run_3 = data$Elapsed_Time[11:15]
+  )
+
+brks <- c(128,256,512,1024,2048)
+lbs <- c(expression(2^7), expression(2^8), expression(2^9), expression(2^10), expression(2^11))
+
+```
+
+# Robert Smith
+
+## Program 2 - Experiments with Caching
+
+### Experimental Design
+
+The matrices were implemented as 1-dimensional short int arrays, and were initialized outside of the timer. A function was created so that the rows & columns could be easily accessed, and the blocking loop was implemented similarly to the example. The timer was begun after the matrix initialization, and ends immediately after the matrix multiplication is completed. Finally, the experiment was run on the Tesla server. 
+
+### Output
+
+Based on three trials, I found a quite profound & repeatable linear speedup between Block Sizes of $2^7$ and $2^8$, with slower speedups in the ranges of $2^9$ to $2^11$. This speedup, when viewed after a logarithmic transformation appears to be linear and therefore as block size increases by a power of X, time to complete the process in milliseconds appears to fall by a power of Y. From the table below, none of the times were outside a certain range so I don't expect that there will be any extraordinary speedup achieved by moving towards larger block sizes. 
+
+```{r echo=FALSE,results='asis',comment="",dev="CairoSVG",fig.height=4,fig.width=7.5, fig.align='center'}
+
+cat('<div align="center"> <TABLE border=1> <TR> <TD>')
+
+print(
+  xtable(
+    output, 
+    caption = "Table of Minimum Elapsed Time"
+    ), 
+  type = "html", 
+  caption.placement = "top", 
+  comment = FALSE
+  )
+
+cat("</TD> <TD> </TD> <TD>")
+
+print(
+  xtable(
+    op.data, 
+    caption = "Table of Elapsed Times from All Runs"
+    ), 
+  type = "html", 
+  caption.placement = "top", 
+  comment = FALSE
+  )
+
+cat("</TD> </TR> </TABLE> </div>")
+
+ggplot(output, aes(x = Block_Size, y = Elapsed_Time)) + 
+  geom_bar(stat="identity") + 
+  geom_line(col = "red") + 
+  ggtitle("Lab 2 - Experiments With Caching") + 
+  xlab("Block Size") + 
+  ylab("Elapsed Time (ms.)") + 
+  scale_x_continuous(breaks = brks, labels = lbs) + 
+  scale_y_continuous(labels = comma)
+
+ggplot(output, aes(x = exp, y = Elapsed_Time)) + 
+  geom_bar(stat="identity") + 
+  geom_line(col = "red") + 
+  ggtitle("Lab 2 - Experiments With Caching") + 
+  xlab("Block Size") + 
+  ylab(expression(paste(log[10], "(Elapsed Time (ms.))"))) + 
+  scale_x_continuous(breaks = 1:5, labels = lbs) + 
+  scale_y_log10(labels = trans_format('log10',math_format(10^.x)))
+
+```
+
+### Conclusions
+
+Based on the trials, I estimate that the cache size on Tesla is around $2 * 2^11 = 2^{12}$ bytes (as short ints are stored as 2-byte data types), so approximately 1 kilobyte. To find this estimate, we see a fairly linear time trend when we look at the logarithmic value of the time it takes to complete the process which suggests that since we don't see a local minimum somewhere outside the left and right side of the graph that we've approached the cache size but not actually surpassed it. 

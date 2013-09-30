@@ -1,0 +1,472 @@
+#LyX 2.0 created this file. For more info see http://www.lyx.org/
+\lyxformat 413
+\begin_document
+\begin_header
+\textclass article
+\use_default_options true
+\begin_modules
+knitr
+\end_modules
+\maintain_unincluded_children false
+\language english
+\language_package default
+\inputencoding auto
+\fontencoding global
+\font_roman default
+\font_sans default
+\font_typewriter default
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100
+\font_tt_scale 100
+
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\paperfontsize default
+\spacing single
+\use_hyperref false
+\papersize default
+\use_geometry false
+\use_amsmath 1
+\use_esint 1
+\use_mhchem 1
+\use_mathdots 1
+\cite_engine basic
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\use_refstyle 1
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\paragraph_indentation default
+\quotes_language english
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Title
+Homework 2 - Experiments with Caching
+\end_layout
+
+\begin_layout Author
+Robert Smith
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+<<setup,include=FALSE>>=
+\end_layout
+
+\begin_layout Plain Layout
+
+library(ggplot2) 
+\end_layout
+
+\begin_layout Plain Layout
+
+library(scales) 
+\end_layout
+
+\begin_layout Plain Layout
+
+library(sqldf) 
+\end_layout
+
+\begin_layout Plain Layout
+
+library(xtable)
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+data <- read.csv("C:/Users/Rob/Documents/GitHub/Parallel_Processing/P2_output.csv"
+, header = FALSE) 
+\end_layout
+
+\begin_layout Plain Layout
+
+colnames(data) <- c("Block_Size", "Elapsed_Time", "Trial")
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+output <- sqldf("select Block_Size, min(Elapsed_Time) as Elapsed_Time from
+ data group by Block_Size")
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+output <- cbind(output, exp = 1:5)
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+op.data <- data.frame(
+\end_layout
+
+\begin_layout Plain Layout
+
+	Block_Size = as.integer(2**(7:11)),
+\end_layout
+
+\begin_layout Plain Layout
+
+	Run_1 = data$Elapsed_Time[1:5],
+\end_layout
+
+\begin_layout Plain Layout
+
+	Run_2 = data$Elapsed_Time[6:10],
+\end_layout
+
+\begin_layout Plain Layout
+
+	Run_3 = data$Elapsed_Time[11:15]
+\end_layout
+
+\begin_layout Plain Layout
+
+)
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+brks <- c(128,256,512,1024,2048)
+\end_layout
+
+\begin_layout Plain Layout
+
+lbs <- c(expression(2^7), expression(2^8), expression(2^9), expression(2^10),
+ expression(2^11))
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+@
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section
+Experimental Design
+\end_layout
+
+\begin_layout Standard
+The matrices were implemented as 1-dimensional short int arrays, and were
+ initialized outside of the timer.
+ A function was created so that the rows & columns could be easily accessed,
+ and the blocking loop was implemented similarly to the example.
+ The timer was begun after the matrix initialization, and ends immediately
+ after the matrix multiplication is completed.
+ Finally, the experiment was run on the Tesla server.
+ 
+\end_layout
+
+\begin_layout Section
+Output
+\end_layout
+
+\begin_layout Standard
+Based on three trials, I found a quite profound & repeatable linear speedup
+ between Block Sizes of 
+\begin_inset Formula $2{}^{7}$
+\end_inset
+
+ and 
+\begin_inset Formula $2^{8}$
+\end_inset
+
+, with slower speedups in the ranges of 
+\begin_inset Formula $2{}^{9}$
+\end_inset
+
+ to 
+\begin_inset Formula $2{}^{11}$
+\end_inset
+
+.
+ This speedup, when viewed after a logarithmic transformation appears to
+ be linear and therefore as block size increases by a power of X, time to
+ complete the process in milliseconds appears to fall by a power of Y.
+ From the table below, none of the times were outside a certain range so
+ I don't expect that there will be any extraordinary speedup achieved by
+ moving towards larger block sizes.
+ 
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+<<p2,echo=FALSE,results='asis',comment="",dev="pdf",fig.height=4,fig.width=7.5,fig.a
+lign='center'>>=
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+print(   
+\end_layout
+
+\begin_layout Plain Layout
+
+	xtable(     
+\end_layout
+
+\begin_layout Plain Layout
+
+		output,      
+\end_layout
+
+\begin_layout Plain Layout
+
+		caption = "Table of Minimum Elapsed Time"
+\end_layout
+
+\begin_layout Plain Layout
+
+		),    
+\end_layout
+
+\begin_layout Plain Layout
+
+	type = "latex",    
+\end_layout
+
+\begin_layout Plain Layout
+
+	caption.placement = "top",    
+\end_layout
+
+\begin_layout Plain Layout
+
+	comment = FALSE   
+\end_layout
+
+\begin_layout Plain Layout
+
+)
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+print(   
+\end_layout
+
+\begin_layout Plain Layout
+
+	xtable(     
+\end_layout
+
+\begin_layout Plain Layout
+
+		op.data,      
+\end_layout
+
+\begin_layout Plain Layout
+
+		caption = "Table of Elapsed Times from All Runs"     
+\end_layout
+
+\begin_layout Plain Layout
+
+		),    
+\end_layout
+
+\begin_layout Plain Layout
+
+	type = "latex",    
+\end_layout
+
+\begin_layout Plain Layout
+
+	caption.placement = "top",    
+\end_layout
+
+\begin_layout Plain Layout
+
+	comment = FALSE   
+\end_layout
+
+\begin_layout Plain Layout
+
+)
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+ggplot(output, aes(x = Block_Size, y = Elapsed_Time)) +    
+\end_layout
+
+\begin_layout Plain Layout
+
+	geom_bar(stat = "identity") + geom_line(col = "red") +    
+\end_layout
+
+\begin_layout Plain Layout
+
+	ggtitle("Lab 2 - Experiments With Caching") +    
+\end_layout
+
+\begin_layout Plain Layout
+
+	xlab("Block Size") + ylab("Elapsed Time (ms.)") + 
+\end_layout
+
+\begin_layout Plain Layout
+
+	scale_x_continuous(breaks = brks, labels = lbs) + 
+\end_layout
+
+\begin_layout Plain Layout
+
+	scale_y_continuous(labels = comma)
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+ggplot(output, aes(x = exp, y = Elapsed_Time)) +    
+\end_layout
+
+\begin_layout Plain Layout
+
+	geom_bar(stat="identity") + geom_line(col = "red") +    
+\end_layout
+
+\begin_layout Plain Layout
+
+	ggtitle("Lab 2 - Experiments With Caching") +    
+\end_layout
+
+\begin_layout Plain Layout
+
+	xlab("Block Size") + ylab(expression(paste(log[10], "(Elapsed Time (ms.))")))
+ +    
+\end_layout
+
+\begin_layout Plain Layout
+
+	scale_x_continuous(breaks = 1:5, labels = lbs) +    
+\end_layout
+
+\begin_layout Plain Layout
+
+	scale_y_log10(labels = trans_format('log10',math_format(10^.x)))
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+@
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section
+Conclusions
+\end_layout
+
+\begin_layout Standard
+Based on the trials, I estimate that the cache size on Tesla is around 
+\begin_inset Formula $2*2^{11}=2^{12}$
+\end_inset
+
+ bytes (as short ints are stored as 2-byte data types).
+ To find this estimate, we see a fairly linear time trend when we look at
+ the logarithmic value of the time it takes to complete the process which
+ suggests that since we don't see a local minimum somewhere outside the
+ left and right side of the graph that we've approached the cache size but
+ not actually surpassed it.
+ While the cache maximum was not proven to be obtained, by looking at the
+ slope of the untreated data we can see that we are rapidly appproching
+ the system minimum and as such should not be much more than a few extra
+ powers of two.
+\end_layout
+
+\end_body
+\end_document
