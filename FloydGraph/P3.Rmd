@@ -1,0 +1,45 @@
+% Robert Smith
+% Lab 3: Pthreads & Floyd's Algorithm
+% \today
+
+```{r setup,include=FALSE}
+library(ggplot2)
+library(gridExtra)
+```
+
+To begin my familiarity with Floyd's Algorithm, I investigated the serial implementation of the algorithm and confirmed its effectiveness as a means to compare the parallel version.
+
+Upon the investigation of the whole of the data, and an ANOVA experiment, it seems that there is a significant difference in the amount of time that it takes for Floyd's Algorithm to evaluate a 28x28 matrix and the number of threads involved in the experiment. Based on further analysis with Tukey's HSD test it seems that there is no significant difference between 4 and 2 threads on my machine (Intel Core i5 laptop 1.7 ghz), but there is a significant difference between 2 & 7 threads and 4 & 7 threads. 
+
+Based on this, and the knowledge that my laptop is dual-core with hyperthreading which allows a maximum of 4 simultaneous threads I'd follow this up with an experiment to confirm that the maximum amount of simultaneous threads allow for the fastest execution of a pthreads program on a given machine.
+
+
+```{r data,echo=FALSE,warning=FALSE,echo=FALSE,dev='pdf',dpi=600}
+P3 <- read.csv("~/GitHub/FloydGraph/P3.csv", colClasses = c("factor", "integer"))
+P3_threads <- as.integer(P3$threads)
+
+(anova <- aov(time~threads, data=P3))
+(tukey <- TukeyHSD(anova))
+
+```
+
+```{r data2,echo=FALSE,warning=FALSE,echo=FALSE,dev='pdf',dpi=600}
+print(plot(tukey))
+```
+
+```{r data3,echo=FALSE,warning=FALSE,echo=FALSE,dev='pdf',dpi=600,fig.height=10,fig.width=7.5}
+p1 <- ggplot(P3, aes(x = time, y = ..density.., fill = threads)) + stat_density(geom= "area")
+
+chunk <- P3[P3_threads == 1L, ]
+p2 <- ggplot(chunk, aes(x = time, y = ..density..)) + stat_density(geom= "area") + ggtitle("2 Pthreads")
+
+chunk <- P3[P3_threads == 2L, ]
+p3 <- ggplot(chunk, aes(x = time, y = ..density..)) + stat_density(geom= "area") + ggtitle("4 Pthreads")
+
+chunk <- P3[P3_threads == 3L, ]
+p4 <- ggplot(chunk, aes(x = time, y = ..density..)) + stat_density(geom= "area") + ggtitle("7 Pthreads")
+
+grid.arrange(p1, p2, p3, p4, ncol = 2)
+```
+
+

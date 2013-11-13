@@ -1,0 +1,6 @@
+for g++ >= 4.7
+g++ -pthread -g -Wall -std=c++11 -o NQMQ NQMQ.cpp
+
+for g++ <= 4.7
+g++ -pthread -g -Wall -std=c++0x -o NQMQ NQMQ.cpp
+
